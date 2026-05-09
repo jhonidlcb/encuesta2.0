@@ -1,0 +1,553 @@
+openapi: 3.1.0
+info:
+  # Do not change the title, if the title changes, the import paths will be broken
+  title: Api
+  version: 0.1.0
+  description: API specification
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: candidates
+    description: Candidate operations
+  - name: votes
+    description: Voting operations
+  - name: admin
+    description: Admin operations
+  - name: results
+    description: Public results operations
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
+  /candidates:
+    get:
+      operationId: listCandidates
+      tags: [candidates]
+      summary: List all candidates
+      responses:
+        "200":
+          description: List of candidates
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Candidate"
+
+  /votes:
+    post:
+      operationId: castVote
+      tags: [votes]
+      summary: Cast a vote for a candidate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CastVoteBody"
+      responses:
+        "200":
+          description: Vote cast successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VoteResponse"
+        "400":
+          description: Already voted or invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /votes/check:
+    post:
+      operationId: checkVoteStatus
+      tags: [votes]
+      summary: Check if a fingerprint has already voted
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CheckVoteBody"
+      responses:
+        "200":
+          description: Vote status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VoteCheckResponse"
+
+  /admin/login:
+    post:
+      operationId: adminLogin
+      tags: [admin]
+      summary: Admin login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminLoginBody"
+      responses:
+        "200":
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminLoginResponse"
+        "401":
+          description: Invalid password
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /admin/password:
+    put:
+      operationId: changeAdminPassword
+      tags: [admin]
+      summary: Change admin password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChangePasswordBody"
+      responses:
+        "200":
+          description: Password changed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /admin/candidates:
+    post:
+      operationId: createCandidate
+      tags: [admin]
+      summary: Create a new candidate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCandidateBody"
+      responses:
+        "200":
+          description: Candidate created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Candidate"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /admin/candidates/{id}:
+    put:
+      operationId: updateCandidate
+      tags: [admin]
+      summary: Update a candidate
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateCandidateBody"
+      responses:
+        "200":
+          description: Candidate updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Candidate"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      operationId: deleteCandidate
+      tags: [admin]
+      summary: Delete a candidate
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Candidate deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /admin/stats:
+    get:
+      operationId: getAdminStats
+      tags: [admin]
+      summary: Get voting statistics
+      responses:
+        "200":
+          description: Voting statistics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminStats"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /admin/survey/close:
+    post:
+      operationId: closeSurvey
+      tags: [admin]
+      summary: Close the survey and publish results
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CloseSurveyBody"
+      responses:
+        "200":
+          description: Survey closed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /admin/survey/open:
+    post:
+      operationId: openSurvey
+      tags: [admin]
+      summary: Reopen the survey
+      responses:
+        "200":
+          description: Survey reopened
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /results:
+    get:
+      operationId: getPublicResults
+      tags: [results]
+      summary: Get public results (only available when survey is closed)
+      responses:
+        "200":
+          description: Public results
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PublicResults"
+        "403":
+          description: Survey not yet closed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required:
+        - status
+
+    Candidate:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        photo:
+          type: string
+        createdAt:
+          type: string
+      required:
+        - id
+        - name
+        - photo
+        - createdAt
+
+    CastVoteBody:
+      type: object
+      properties:
+        candidateId:
+          type: integer
+        voterName:
+          type: string
+          nullable: true
+        fingerprint:
+          type: string
+      required:
+        - candidateId
+        - fingerprint
+
+    CheckVoteBody:
+      type: object
+      properties:
+        fingerprint:
+          type: string
+      required:
+        - fingerprint
+
+    VoteResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+      required:
+        - success
+        - message
+
+    VoteCheckResponse:
+      type: object
+      properties:
+        hasVoted:
+          type: boolean
+        candidateId:
+          type: integer
+          nullable: true
+      required:
+        - hasVoted
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error
+
+    SuccessResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+      required:
+        - success
+        - message
+
+    AdminLoginBody:
+      type: object
+      properties:
+        password:
+          type: string
+      required:
+        - password
+
+    AdminLoginResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        token:
+          type: string
+      required:
+        - success
+        - token
+
+    ChangePasswordBody:
+      type: object
+      properties:
+        currentPassword:
+          type: string
+        newPassword:
+          type: string
+      required:
+        - currentPassword
+        - newPassword
+
+    CreateCandidateBody:
+      type: object
+      properties:
+        name:
+          type: string
+        photo:
+          type: string
+      required:
+        - name
+        - photo
+
+    UpdateCandidateBody:
+      type: object
+      properties:
+        name:
+          type: string
+        photo:
+          type: string
+
+    AdminStats:
+      type: object
+      properties:
+        totalVotes:
+          type: integer
+        candidateCount:
+          type: integer
+        surveyClosed:
+          type: boolean
+        candidates:
+          type: array
+          items:
+            $ref: "#/components/schemas/CandidateStats"
+      required:
+        - totalVotes
+        - candidateCount
+        - surveyClosed
+        - candidates
+
+    CandidateStats:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        photo:
+          type: string
+        totalVotes:
+          type: integer
+        percentage:
+          type: number
+        anonymousVotes:
+          type: integer
+        namedVotes:
+          type: integer
+        recentVotes:
+          type: array
+          items:
+            $ref: "#/components/schemas/RecentVote"
+        allNamedVoters:
+          type: array
+          items:
+            $ref: "#/components/schemas/NamedVoter"
+      required:
+        - id
+        - name
+        - photo
+        - totalVotes
+        - percentage
+        - anonymousVotes
+        - namedVotes
+        - recentVotes
+        - allNamedVoters
+
+    RecentVote:
+      type: object
+      properties:
+        id:
+          type: integer
+        voterName:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+      required:
+        - id
+        - createdAt
+
+    NamedVoter:
+      type: object
+      properties:
+        id:
+          type: integer
+        voterName:
+          type: string
+        createdAt:
+          type: string
+      required:
+        - id
+        - voterName
+        - createdAt
+
+    CloseSurveyBody:
+      type: object
+      properties:
+        showVoterNames:
+          type: boolean
+
+    PublicResults:
+      type: object
+      properties:
+        totalVotes:
+          type: integer
+        candidateCount:
+          type: integer
+        closedAt:
+          type: string
+        showVoterNames:
+          type: boolean
+        candidates:
+          type: array
+          items:
+            $ref: "#/components/schemas/CandidateStats"
+      required:
+        - totalVotes
+        - candidateCount
+        - closedAt
+        - showVoterNames
+        - candidates
